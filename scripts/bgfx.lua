@@ -64,6 +64,7 @@ function bgfxProject(_name, _kind, _defines)
 		configuration { "Debug" }
 			defines {
 				"BGFX_CONFIG_DEBUG=1",
+				"BGFX_CONFIG_SHOW_TRACE=0",	--TEST
 			}
 
 		configuration { "android*" }

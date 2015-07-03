@@ -166,7 +166,7 @@ namespace bgfx
 	{
 		if (BX_ENABLED(BGFX_CONFIG_DEBUG) )
 		{
-			dbgPrintf("vertexdecl %08x (%08x), stride %d\n"
+			BX_TRACE("vertexdecl %08x (%08x), stride %d\n"
 				, _decl.m_hash
 				, bx::hashMurmur2A(_decl.m_attributes)
 				, _decl.m_stride
@@ -182,7 +182,7 @@ namespace bgfx
 					bool asInt;
 					_decl.decode(Attrib::Enum(attr), num, type, normalized, asInt);
 
-					dbgPrintf("\tattr %d - %s, num %d, type %d, norm %d, asint %d, offset %d\n"
+					BX_TRACE("\tattr %d - %s, num %d, type %d, norm %d, asint %d, offset %d\n"
 						, attr
 						, getAttribName(Attrib::Enum(attr) )
 						, num
