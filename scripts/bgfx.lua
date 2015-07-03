@@ -38,10 +38,6 @@ function bgfxProject(_name, _kind, _defines)
 			path.join(BGFX_DIR, "../bx/include"),
 		}
 
-		defines {
-			_defines,
-		}
-
 		if _OPTIONS["with-glfw"] then
 			defines {
 				"BGFX_CONFIG_MULTITHREADED=0",
@@ -96,6 +92,10 @@ function bgfxProject(_name, _kind, _defines)
 				--nacl has GLES2 headers modified...
 				path.join(BGFX_DIR, "3rdparty/khronos"),
 			}
+
+		defines {
+			_defines,
+		}
 
 		configuration {}
 
