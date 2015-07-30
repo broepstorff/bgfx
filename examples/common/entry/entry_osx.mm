@@ -454,6 +454,8 @@ namespace entry
 
 			bx::Thread thread;
 			thread.init(mte.threadFunc, &mte);
+            
+            windowDidResize();
 
 			while (!(m_exit = [dg applicationHasTerminated]) )
 			{
