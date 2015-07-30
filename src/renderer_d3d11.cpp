@@ -436,11 +436,13 @@ namespace bgfx { namespace d3d11
 	};
 
 #if USE_D3D11_DYNAMIC_LIB
-	static PFN_D3D11_CREATE_DEVICE D3D11CreateDevice;
-	static PFN_CREATE_DXGI_FACTORY CreateDXGIFactory;
-	static PFN_D3DPERF_SET_MARKER  D3DPERF_SetMarker;
-	static PFN_D3DPERF_BEGIN_EVENT D3DPERF_BeginEvent;
-	static PFN_D3DPERF_END_EVENT   D3DPERF_EndEvent;
+	static PFN_D3D11_CREATE_DEVICE  D3D11CreateDevice;
+	static PFN_CREATE_DXGI_FACTORY  CreateDXGIFactory;
+	static PFN_D3DPERF_SET_MARKER   D3DPERF_SetMarker;
+	static PFN_D3DPERF_BEGIN_EVENT  D3DPERF_BeginEvent;
+	static PFN_D3DPERF_END_EVENT    D3DPERF_EndEvent;
+	static PFN_GET_DEBUG_INTERFACE  DXGIGetDebugInterface;
+	static PFN_GET_DEBUG_INTERFACE1 DXGIGetDebugInterface1;
 #endif // USE_D3D11_DYNAMIC_LIB
 
 	struct RendererContextD3D11 : public RendererContextI
@@ -449,6 +451,7 @@ namespace bgfx { namespace d3d11
 			: m_d3d9dll(NULL)
 			, m_d3d11dll(NULL)
 			, m_dxgidll(NULL)
+			, m_dxgidebugdll(NULL)
 			, m_renderdocdll(NULL)
 			, m_driverType(D3D_DRIVER_TYPE_NULL)
 			, m_featureLevel(D3D_FEATURE_LEVEL(0) )
@@ -531,6 +534,23 @@ namespace bgfx { namespace d3d11
 
 			CreateDXGIFactory = (PFN_CREATE_DXGI_FACTORY)bx::dlsym(m_dxgidll, "CreateDXGIFactory");
 			BGFX_FATAL(NULL != CreateDXGIFactory, Fatal::UnableToInitialize, "Function CreateDXGIFactory not found.");
+
+			m_dxgidebugdll = bx::dlopen("dxgidebug.dll");
+			if (NULL != m_dxgidebugdll)
+			{
+				DXGIGetDebugInterface  = (PFN_GET_DEBUG_INTERFACE )bx::dlsym(m_dxgidebugdll, "DXGIGetDebugInterface");
+				DXGIGetDebugInterface1 = (PFN_GET_DEBUG_INTERFACE1)bx::dlsym(m_dxgidebugdll, "DXGIGetDebugInterface1");
+				if (NULL == DXGIGetDebugInterface
+				&&  NULL == DXGIGetDebugInterface1)
+				{
+					bx::dlclose(m_dxgidebugdll);
+					m_dxgidebugdll = NULL;
+				}
+				else
+				{
+					// Figure out how to access IDXGIInfoQueue on pre Win8...
+				}
+			}
 #endif // USE_D3D11_DYNAMIC_LIB
 
 			HRESULT hr;
@@ -721,7 +741,7 @@ BX_PRAGMA_DIAGNOSTIC_POP();
 			if (SUCCEEDED(hr) )
 			{
 				setGraphicsDebuggerPresent(true);
-//				DX_RELEASE(renderdoc, 0);
+				DX_RELEASE(renderdoc, 2);
 			}
 			else
 			{
@@ -788,10 +808,10 @@ BX_PRAGMA_DIAGNOSTIC_POP();
 					);
 				BGFX_FATAL(SUCCEEDED(hr), Fatal::UnableToInitialize, "Failed to create swap chain.");
 
-				DX_CHECK(m_factory->MakeWindowAssociation((HWND)g_platformData.nwh, 0
+				DX_CHECK(m_factory->MakeWindowAssociation( (HWND)g_platformData.nwh, 0
 					| DXGI_MWA_NO_WINDOW_CHANGES
 					| DXGI_MWA_NO_ALT_ENTER
-					));
+					) );
 #endif // BX_PLATFORM_WINRT
 			}
 			else
@@ -814,7 +834,7 @@ BX_PRAGMA_DIAGNOSTIC_POP();
 				if (SUCCEEDED(hr) )
 				{
 					m_infoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_CORRUPTION, true);
-					m_infoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_ERROR,      false);
+					m_infoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_ERROR,      true);
 					m_infoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_WARNING,    false);
 
 					D3D11_INFO_QUEUE_FILTER filter;
@@ -853,7 +873,7 @@ BX_PRAGMA_DIAGNOSTIC_POP();
 			if (m_featureLevel <= D3D_FEATURE_LEVEL_9_2)
 			{
 				g_caps.maxTextureSize   = D3D_FL9_1_REQ_TEXTURE2D_U_OR_V_DIMENSION;
-				g_caps.maxFBAttachments = uint8_t(bx::uint32_min(D3D_FL9_1_SIMULTANEOUS_RENDER_TARGET_COUNT, BGFX_CONFIG_MAX_FRAME_BUFFER_ATTACHMENTS));
+				g_caps.maxFBAttachments = uint8_t(bx::uint32_min(D3D_FL9_1_SIMULTANEOUS_RENDER_TARGET_COUNT, BGFX_CONFIG_MAX_FRAME_BUFFER_ATTACHMENTS) );
 			}
 			else if (m_featureLevel == D3D_FEATURE_LEVEL_9_3)
 			{
@@ -1108,9 +1128,20 @@ BX_PRAGMA_DIAGNOSTIC_POP();
 			unloadRenderDoc(m_renderdocdll);
 
 #if USE_D3D11_DYNAMIC_LIB
+			if (NULL != m_dxgidebugdll)
+			{
+				bx::dlclose(m_dxgidebugdll);
+				m_dxgidebugdll = NULL;
+			}
+
 			bx::dlclose(m_dxgidll);
+			m_dxgidll = NULL;
+
 			bx::dlclose(m_d3d9dll);
+			m_d3d9dll = NULL;
+
 			bx::dlclose(m_d3d11dll);
+			m_d3d11dll = NULL;
 #endif // USE_D3D11_DYNAMIC_LIB
 		}
 
@@ -1314,7 +1345,7 @@ BX_PRAGMA_DIAGNOSTIC_POP();
 			}
 
 			ID3D11Texture2D* backBuffer;
-			DX_CHECK(m_swapChain->GetBuffer(0, IID_ID3D11Texture2D, (void**)&backBuffer));
+			DX_CHECK(m_swapChain->GetBuffer(0, IID_ID3D11Texture2D, (void**)&backBuffer) );
 
 			D3D11_TEXTURE2D_DESC backBufferDesc;
 			backBuffer->GetDesc(&backBufferDesc);
@@ -1509,7 +1540,7 @@ BX_PRAGMA_DIAGNOSTIC_POP();
 			if (NULL != m_swapChain)
 			{
 				ID3D11Texture2D* color;
-				DX_CHECK(m_swapChain->GetBuffer(0, IID_ID3D11Texture2D, (void**)&color));
+				DX_CHECK(m_swapChain->GetBuffer(0, IID_ID3D11Texture2D, (void**)&color) );
 
 				D3D11_RENDER_TARGET_VIEW_DESC desc;
 				desc.ViewDimension = (m_flags & BGFX_RESET_MSAA_MASK)
@@ -1579,10 +1610,10 @@ BX_PRAGMA_DIAGNOSTIC_POP();
 			if (NULL != m_swapChain)
 			{
 				HRESULT hr = S_OK;
-				uint32_t syncInterval = !!(m_flags & BGFX_RESET_VSYNC);
-#if BX_PLATFORM_WINRT
-				syncInterval = 1;   // sync interval of 0 is not supported on WinRT
-#endif
+				uint32_t syncInterval = BX_ENABLED(BX_PLATFORM_WINRT)
+					? 1 // sync interval of 0 is not supported on WinRT
+					: !!(m_flags & BGFX_RESET_VSYNC)
+					;
 
 				for (uint32_t ii = 1, num = m_numWindows; ii < num && SUCCEEDED(hr); ++ii)
 				{
@@ -1708,7 +1739,7 @@ BX_PRAGMA_DIAGNOSTIC_POP();
 							, getBufferHeight()
 							, getBufferFormat()
 							, DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH
-							));
+							) );
 					}
 					else
 					{
@@ -1720,7 +1751,7 @@ BX_PRAGMA_DIAGNOSTIC_POP();
 						SwapChainDesc* scd = &m_scd;
 						SwapChainDesc swapChainScd;
 						if (0 != (m_flags & BGFX_RESET_HMD)
-						&&  m_ovr.isInitialized())
+						&&  m_ovr.isInitialized() )
 						{
 							swapChainScd = m_scd;
 							swapChainScd.SampleDesc = s_msaa[0];
@@ -2264,7 +2295,7 @@ BX_PRAGMA_DIAGNOSTIC_POP();
 					bx::write(&writer, magic);
 
 					TextureCreate tc;
-					tc.m_flags   = BGFX_TEXTURE_RT|(((m_flags & BGFX_RESET_MSAA_MASK) >> BGFX_RESET_MSAA_SHIFT) << BGFX_TEXTURE_RT_MSAA_SHIFT);
+					tc.m_flags   = BGFX_TEXTURE_RT|( ((m_flags & BGFX_RESET_MSAA_MASK) >> BGFX_RESET_MSAA_SHIFT) << BGFX_TEXTURE_RT_MSAA_SHIFT);
 					tc.m_width   = m_ovr.m_rtSize.w;
 					tc.m_height  = m_ovr.m_rtSize.h;
 					tc.m_sides   = 0;
@@ -2335,7 +2366,7 @@ BX_PRAGMA_DIAGNOSTIC_POP();
 			if (m_flags&BGFX_RESET_CAPTURE)
 			{
 				ID3D11Texture2D* backBuffer;
-				DX_CHECK(m_swapChain->GetBuffer(0, IID_ID3D11Texture2D, (void**)&backBuffer));
+				DX_CHECK(m_swapChain->GetBuffer(0, IID_ID3D11Texture2D, (void**)&backBuffer) );
 
 				D3D11_TEXTURE2D_DESC backBufferDesc;
 				backBuffer->GetDesc(&backBufferDesc);
@@ -2381,7 +2412,7 @@ BX_PRAGMA_DIAGNOSTIC_POP();
 			if (NULL != m_captureTexture)
 			{
 				ID3D11Texture2D* backBuffer;
-				DX_CHECK(m_swapChain->GetBuffer(0, IID_ID3D11Texture2D, (void**)&backBuffer));
+				DX_CHECK(m_swapChain->GetBuffer(0, IID_ID3D11Texture2D, (void**)&backBuffer) );
 
 				if (NULL == m_captureResolve)
 				{
@@ -2389,7 +2420,7 @@ BX_PRAGMA_DIAGNOSTIC_POP();
 				}
 				else
 				{
-					m_deviceCtx->ResolveSubresource(m_captureResolve, 0, backBuffer, 0, getBufferFormat());
+					m_deviceCtx->ResolveSubresource(m_captureResolve, 0, backBuffer, 0, getBufferFormat() );
 					m_deviceCtx->CopyResource(m_captureTexture, m_captureResolve);
 				}
 
@@ -2615,6 +2646,7 @@ BX_PRAGMA_DIAGNOSTIC_POP();
 		void* m_d3d9dll;
 		void* m_d3d11dll;
 		void* m_dxgidll;
+		void* m_dxgidebugdll;
 
 		void* m_renderdocdll;
 
@@ -2909,7 +2941,7 @@ BX_PRAGMA_DIAGNOSTIC_POP();
 		D3D11_MAPPED_SUBRESOURCE mapped;
 		BX_UNUSED(_discard);
 		D3D11_MAP type = D3D11_MAP_WRITE_DISCARD;
-		DX_CHECK(deviceCtx->Map(m_ptr, 0, type, 0, &mapped));
+		DX_CHECK(deviceCtx->Map(m_ptr, 0, type, 0, &mapped) );
 		memcpy( (uint8_t*)mapped.pData + _offset, _data, _size);
 		deviceCtx->Unmap(m_ptr, 0);
 #endif // 0
@@ -3058,7 +3090,7 @@ BX_PRAGMA_DIAGNOSTIC_POP();
 		uint8_t numAttrs;
 		bx::read(&reader, numAttrs);
 
-		memset(m_attrMask, 0, sizeof(m_attrMask));
+		memset(m_attrMask, 0, sizeof(m_attrMask) );
 
 		for (uint32_t ii = 0; ii < numAttrs; ++ii)
 		{
@@ -3428,7 +3460,7 @@ BX_PRAGMA_DIAGNOSTIC_POP();
 		BGFX_FATAL(SUCCEEDED(hr), Fatal::UnableToInitialize, "Failed to create swap chain.");
 
 		ID3D11Resource* ptr;
-		DX_CHECK(m_swapChain->GetBuffer(0, IID_ID3D11Texture2D, (void**)&ptr));
+		DX_CHECK(m_swapChain->GetBuffer(0, IID_ID3D11Texture2D, (void**)&ptr) );
 		DX_CHECK(s_renderD3D11->m_device->CreateRenderTargetView(ptr, NULL, &m_rtv[0]) );
 		DX_RELEASE(ptr, 0);
 		m_srv[0]   = NULL;
@@ -3653,10 +3685,7 @@ BX_PRAGMA_DIAGNOSTIC_POP();
 		int64_t elapsed = -bx::getHPCounter();
 		int64_t captureElapsed = 0;
 
-		if (_render->m_debug & (BGFX_DEBUG_IFH|BGFX_DEBUG_STATS) )
-		{
-			m_gpuTimer.begin();
-		}
+		m_gpuTimer.begin();
 
 		if (0 < _render->m_iboffset)
 		{
@@ -4442,23 +4471,31 @@ BX_PRAGMA_DIAGNOSTIC_POP();
 		min = min > frameTime ? frameTime : min;
 		max = max < frameTime ? frameTime : max;
 
+		static uint32_t maxGpuLatency = 0;
+		static double   maxGpuElapsed = 0.0f;
+		double elapsedGpuMs = 0.0;
+
+		m_gpuTimer.end();
+
+		while (m_gpuTimer.get() )
+		{
+			double toGpuMs = 1000.0 / double(m_gpuTimer.m_frequency);
+			elapsedGpuMs   = m_gpuTimer.m_elapsed * toGpuMs;
+			maxGpuElapsed  = elapsedGpuMs > maxGpuElapsed ? elapsedGpuMs : maxGpuElapsed;
+		}
+		maxGpuLatency = bx::uint32_imax(maxGpuLatency, m_gpuTimer.m_control.available()-1);
+
+		const int64_t timerFreq = bx::getHPFrequency();
+
+		Stats& perfStats   = _render->m_perfStats;
+		perfStats.cpuTime      = frameTime;
+		perfStats.cpuTimerFreq = timerFreq;
+		perfStats.gpuTime      = m_gpuTimer.m_elapsed;
+		perfStats.gpuTimerFreq = m_gpuTimer.m_frequency;
+
 		if (_render->m_debug & (BGFX_DEBUG_IFH|BGFX_DEBUG_STATS) )
 		{
 			PIX_BEGINEVENT(D3DCOLOR_RGBA(0x40, 0x40, 0x40, 0xff), L"debugstats");
-
-			static uint32_t maxGpuLatency = 0;
-			static double   maxGpuElapsed = 0.0f;
-			double elapsedGpuMs = 0.0;
-
-			m_gpuTimer.end();
-
-			while (m_gpuTimer.get() )
-			{
-				double toGpuMs = 1000.0 / double(m_gpuTimer.m_frequency);
-				elapsedGpuMs   = m_gpuTimer.m_elapsed * toGpuMs;
-				maxGpuElapsed  = elapsedGpuMs > maxGpuElapsed ? elapsedGpuMs : maxGpuElapsed;
-			}
-			maxGpuLatency = bx::uint32_imax(maxGpuLatency, m_gpuTimer.m_control.available()-1);
 
 			TextVideoMem& tvm = m_textVideoMem;
 
@@ -4466,7 +4503,7 @@ BX_PRAGMA_DIAGNOSTIC_POP();
 
 			if (now >= next)
 			{
-				next = now + bx::getHPFrequency();
+				next = now + timerFreq;
 				double freq = double(bx::getHPFrequency() );
 				double toMs = 1000.0/freq;
 
