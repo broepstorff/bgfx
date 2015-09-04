@@ -13,6 +13,7 @@
 
 namespace bgfx
 {
+	bool gEnableRenderDoc = true;
 	bool findModule(const char* _name)
 	{
 #if BX_PLATFORM_WINDOWS
@@ -85,7 +86,9 @@ namespace bgfx
 			return NULL;
 		}
 
-		void* renderdocdll = bx::dlopen("renderdoc.dll");
+		void* renderdocdll = NULL;
+		if(gEnableRenderDoc)
+			renderdocdll = bx::dlopen("renderdoc.dll");
 
 		if (NULL != renderdocdll)
 		{
@@ -103,7 +106,7 @@ RENDERDOC_IMPORT
 
 				RENDERDOC_SetFocusToggleKeys(NULL, 0);
 
-				KeyButton captureKey = eKey_F11;
+				KeyButton captureKey = eKey_PrtScrn;
 				RENDERDOC_SetCaptureKeys(&captureKey, 1);
 
 				CaptureOptions opt;
@@ -115,7 +118,7 @@ RENDERDOC_IMPORT
 				uint32_t ident = 0;
 				RENDERDOC_InitRemoteAccess(&ident);
 
-				RENDERDOC_MaskOverlayBits(eOverlay_None, eOverlay_None);
+				RENDERDOC_MaskOverlayBits(eOverlay_None, eOverlay_Default);
 			}
 			else
 			{
