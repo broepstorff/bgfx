@@ -66,6 +66,7 @@ typedef enum bgfx_attrib
 typedef enum bgfx_attrib_type
 {
     BGFX_ATTRIB_TYPE_UINT8,
+    BGFX_ATTRIB_TYPE_UINT10,
     BGFX_ATTRIB_TYPE_INT16,
     BGFX_ATTRIB_TYPE_HALF,
     BGFX_ATTRIB_TYPE_FLOAT,
@@ -97,21 +98,43 @@ typedef enum bgfx_texture_format
     BGFX_TEXTURE_FORMAT_UNKNOWN,
 
     BGFX_TEXTURE_FORMAT_R1,
+    BGFX_TEXTURE_FORMAT_A8,
     BGFX_TEXTURE_FORMAT_R8,
+    BGFX_TEXTURE_FORMAT_R8I,
+    BGFX_TEXTURE_FORMAT_R8U,
+    BGFX_TEXTURE_FORMAT_R8S,
     BGFX_TEXTURE_FORMAT_R16,
+    BGFX_TEXTURE_FORMAT_R16I,
+    BGFX_TEXTURE_FORMAT_R16U,
     BGFX_TEXTURE_FORMAT_R16F,
-    BGFX_TEXTURE_FORMAT_R32,
+    BGFX_TEXTURE_FORMAT_R16S,
+    BGFX_TEXTURE_FORMAT_R32I,
+    BGFX_TEXTURE_FORMAT_R32U,
     BGFX_TEXTURE_FORMAT_R32F,
     BGFX_TEXTURE_FORMAT_RG8,
+    BGFX_TEXTURE_FORMAT_RG8I,
+    BGFX_TEXTURE_FORMAT_RG8U,
+    BGFX_TEXTURE_FORMAT_RG8S,
     BGFX_TEXTURE_FORMAT_RG16,
+    BGFX_TEXTURE_FORMAT_RG16I,
+    BGFX_TEXTURE_FORMAT_RG16U,
     BGFX_TEXTURE_FORMAT_RG16F,
-    BGFX_TEXTURE_FORMAT_RG32,
+    BGFX_TEXTURE_FORMAT_RG16S,
+    BGFX_TEXTURE_FORMAT_RG32I,
+    BGFX_TEXTURE_FORMAT_RG32U,
     BGFX_TEXTURE_FORMAT_RG32F,
     BGFX_TEXTURE_FORMAT_BGRA8,
     BGFX_TEXTURE_FORMAT_RGBA8,
+    BGFX_TEXTURE_FORMAT_RGBA8I,
+    BGFX_TEXTURE_FORMAT_RGBA8U,
+    BGFX_TEXTURE_FORMAT_RGBA8S,
     BGFX_TEXTURE_FORMAT_RGBA16,
+    BGFX_TEXTURE_FORMAT_RGBA16I,
+    BGFX_TEXTURE_FORMAT_RGBA16U,
     BGFX_TEXTURE_FORMAT_RGBA16F,
-    BGFX_TEXTURE_FORMAT_RGBA32,
+    BGFX_TEXTURE_FORMAT_RGBA16S,
+    BGFX_TEXTURE_FORMAT_RGBA32I,
+    BGFX_TEXTURE_FORMAT_RGBA32U,
     BGFX_TEXTURE_FORMAT_RGBA32F,
     BGFX_TEXTURE_FORMAT_R5G6B5,
     BGFX_TEXTURE_FORMAT_RGBA4,
@@ -236,7 +259,7 @@ typedef struct bgfx_vertex_decl
     uint32_t hash;
     uint16_t stride;
     uint16_t offset[BGFX_ATTRIB_COUNT];
-    uint8_t  attributes[BGFX_ATTRIB_COUNT];
+    uint16_t attributes[BGFX_ATTRIB_COUNT];
 
 } bgfx_vertex_decl_t;
 
@@ -432,7 +455,7 @@ BGFX_C_API uint8_t bgfx_get_supported_renderers(bgfx_renderer_type_t _enum[BGFX_
 BGFX_C_API const char* bgfx_get_renderer_name(bgfx_renderer_type_t _type);
 
 /**/
-BGFX_C_API void bgfx_init(bgfx_renderer_type_t _type, uint16_t _vendorId, uint16_t _deviceId, bgfx_callback_interface_t* _callback, bgfx_reallocator_interface_t* _allocator);
+BGFX_C_API bool bgfx_init(bgfx_renderer_type_t _type, uint16_t _vendorId, uint16_t _deviceId, bgfx_callback_interface_t* _callback, bgfx_reallocator_interface_t* _allocator);
 
 /**/
 BGFX_C_API void bgfx_shutdown();

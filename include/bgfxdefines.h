@@ -76,7 +76,7 @@
 #define BGFX_STATE_MASK                  UINT64_C(0xffffffffffffffff) //!<
 
 /// Default state is write to RGB, alpha, and depth with depth test less enabled, with clockwise
-/// culling and MSAA (when writting into MSAA frame buffer, otherwise this flag is ignored).
+/// culling and MSAA (when writing into MSAA frame buffer, otherwise this flag is ignored).
 #define BGFX_STATE_DEFAULT (0 \
 					| BGFX_STATE_RGB_WRITE \
 					| BGFX_STATE_ALPHA_WRITE \
@@ -338,31 +338,36 @@
 #define BGFX_RESET_FLUSH_AFTER_RENDER    UINT32_C(0x00002000) //!< Flush rendering after submitting to GPU.
 #define BGFX_RESET_FLIP_AFTER_RENDER     UINT32_C(0x00004000) //!< This flag  specifies where flip occurs. Default behavior is that flip occurs before rendering new frame. This flag only has effect when `BGFX_CONFIG_MULTITHREADED=0`.
 #define BGFX_RESET_SRGB_BACKBUFFER       UINT32_C(0x00008000) //!< Enable sRGB backbuffer.
+#define BGFX_RESET_HIDPI                 UINT32_C(0x00010000) //!< Enable HiDPI rendering.
 
 ///
 #define BGFX_CAPS_TEXTURE_COMPARE_LEQUAL UINT64_C(0x0000000000000001) //!< Texture compare less equal mode is supported.
 #define BGFX_CAPS_TEXTURE_COMPARE_ALL    UINT64_C(0x0000000000000003) //!< All texture compare modes are supported.
 #define BGFX_CAPS_TEXTURE_3D             UINT64_C(0x0000000000000004) //!< 3D textures are supported.
 #define BGFX_CAPS_VERTEX_ATTRIB_HALF     UINT64_C(0x0000000000000008) //!< Vertex attribute half-float is supported.
-#define BGFX_CAPS_INSTANCING             UINT64_C(0x0000000000000010) //!< Instancing is supported.
-#define BGFX_CAPS_RENDERER_MULTITHREADED UINT64_C(0x0000000000000020) //!< Renderer is on separate thread.
-#define BGFX_CAPS_FRAGMENT_DEPTH         UINT64_C(0x0000000000000040) //!< Fragment depth is accessible in fragment shader.
-#define BGFX_CAPS_BLEND_INDEPENDENT      UINT64_C(0x0000000000000080) //!< Blend independent is supported.
-#define BGFX_CAPS_COMPUTE                UINT64_C(0x0000000000000100) //!< Compute shaders are supported.
-#define BGFX_CAPS_FRAGMENT_ORDERING      UINT64_C(0x0000000000000200) //!< Fragment ordering is available in fragment shader.
-#define BGFX_CAPS_SWAP_CHAIN             UINT64_C(0x0000000000000400) //!< Multiple windows are supported.
-#define BGFX_CAPS_HMD                    UINT64_C(0x0000000000000800) //!< Head Mounted Display is available.
-#define BGFX_CAPS_INDEX32                UINT64_C(0x0000000000001000) //!< 32-bit indices are supported.
-#define BGFX_CAPS_DRAW_INDIRECT          UINT64_C(0x0000000000002000) //!< Draw indirect is supported.
+#define BGFX_CAPS_VERTEX_ATTRIB_UINT10   UINT64_C(0x0000000000000010) //!< Vertex attribute 10_10_10_2 is supported.
+#define BGFX_CAPS_INSTANCING             UINT64_C(0x0000000000000020) //!< Instancing is supported.
+#define BGFX_CAPS_RENDERER_MULTITHREADED UINT64_C(0x0000000000000040) //!< Renderer is on separate thread.
+#define BGFX_CAPS_FRAGMENT_DEPTH         UINT64_C(0x0000000000000080) //!< Fragment depth is accessible in fragment shader.
+#define BGFX_CAPS_BLEND_INDEPENDENT      UINT64_C(0x0000000000000100) //!< Blend independent is supported.
+#define BGFX_CAPS_COMPUTE                UINT64_C(0x0000000000000200) //!< Compute shaders are supported.
+#define BGFX_CAPS_FRAGMENT_ORDERING      UINT64_C(0x0000000000000400) //!< Fragment ordering is available in fragment shader.
+#define BGFX_CAPS_SWAP_CHAIN             UINT64_C(0x0000000000000800) //!< Multiple windows are supported.
+#define BGFX_CAPS_HMD                    UINT64_C(0x0000000000001000) //!< Head Mounted Display is available.
+#define BGFX_CAPS_INDEX32                UINT64_C(0x0000000000002000) //!< 32-bit indices are supported.
+#define BGFX_CAPS_DRAW_INDIRECT          UINT64_C(0x0000000000004000) //!< Draw indirect is supported.
+#define BGFX_CAPS_HIDPI                  UINT64_C(0x0000000000008000) //!< HiDPI rendering is supported.
 
 ///
-#define BGFX_CAPS_FORMAT_TEXTURE_NONE        UINT8_C(0x00) //!<
-#define BGFX_CAPS_FORMAT_TEXTURE_COLOR       UINT8_C(0x01) //!<
-#define BGFX_CAPS_FORMAT_TEXTURE_COLOR_SRGB  UINT8_C(0x02) //!<
-#define BGFX_CAPS_FORMAT_TEXTURE_EMULATED    UINT8_C(0x04) //!<
-#define BGFX_CAPS_FORMAT_TEXTURE_VERTEX      UINT8_C(0x08) //!<
-#define BGFX_CAPS_FORMAT_TEXTURE_IMAGE       UINT8_C(0x10) //!<
-#define BGFX_CAPS_FORMAT_TEXTURE_FRAMEBUFFER UINT8_C(0x20) //!<
+#define BGFX_CAPS_FORMAT_TEXTURE_NONE             UINT8_C(0x00) //!< Texture format is not supported.
+#define BGFX_CAPS_FORMAT_TEXTURE_COLOR            UINT8_C(0x01) //!< Texture format is supported.
+#define BGFX_CAPS_FORMAT_TEXTURE_COLOR_SRGB       UINT8_C(0x02) //!< Texture as sRGB format is supported.
+#define BGFX_CAPS_FORMAT_TEXTURE_EMULATED         UINT8_C(0x04) //!< Texture format is emulated.
+#define BGFX_CAPS_FORMAT_TEXTURE_VERTEX           UINT8_C(0x08) //!< Texture format can be used from vertex shader.
+#define BGFX_CAPS_FORMAT_TEXTURE_IMAGE            UINT8_C(0x10) //!< Texture format can be used as image from compute shader.
+#define BGFX_CAPS_FORMAT_TEXTURE_FRAMEBUFFER      UINT8_C(0x20) //!< Texture format can be used as frame buffer.
+#define BGFX_CAPS_FORMAT_TEXTURE_FRAMEBUFFER_MSAA UINT8_C(0x40) //!< Texture format can be used as MSAA frame buffer.
+#define BGFX_CAPS_FORMAT_TEXTURE_MSAA             UINT8_C(0x80) //!< Texture can be sampled as MSAA.
 
 ///
 #define BGFX_VIEW_NONE   UINT8_C(0x00) //!<
