@@ -5,6 +5,10 @@
 
 #include "bgfx_p.h"
 
+namespace bgfx {
+    bool gEnableRenderDoc = true;
+}
+
 #if BGFX_CONFIG_DEBUG_PIX && (BX_PLATFORM_WINDOWS || BX_PLATFORM_LINUX)
 #	if BX_PLATFORM_WINDOWS
 #		include <psapi.h>
@@ -13,7 +17,6 @@
 
 namespace bgfx
 {
-	bool gEnableRenderDoc = true;
 	bool findModule(const char* _name)
 	{
 #if BX_PLATFORM_WINDOWS
