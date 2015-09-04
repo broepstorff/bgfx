@@ -91,7 +91,7 @@ namespace bgfx
 
 		void* renderdocdll = NULL;
 		if(gEnableRenderDoc)
-			renderdocdll = bx::dlopen("renderdoc.dll");
+			renderdocdll = bx::dlopen("renderdoc.dll");		//NOTE: if this fails, double check that you have a 64-bit exe and a 64-bit dll (or 32-32)
 
 		if (NULL != renderdocdll)
 		{
