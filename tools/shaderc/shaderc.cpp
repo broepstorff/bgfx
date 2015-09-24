@@ -1566,6 +1566,14 @@ int main(int _argc, const char* _argv[])
 								first = false;
 							}
 						}
+						if(d3d > 9)
+						{
+							if( NULL != strstr(input, "gl_VertexID") )
+							{
+								preprocessor.writef("%suint gl_VertexID : SV_VertexID\\\n", first ? "" : "\t, ");
+								first = false;
+							}
+						}
 						preprocessor.writef(
 							") \\\n"
 							"{ \\\n"
