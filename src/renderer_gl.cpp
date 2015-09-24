@@ -3495,6 +3495,10 @@ namespace bgfx { namespace gl
 					m_constantBuffer->write(loc);
 					BX_TRACE("store %s %d", name, info->m_handle);
 				}
+				else
+				{
+					BX_TRACE("WARNING! Uniform '%s' not found in program's uniform registry. Make sure to call bgfx::createUniform() before initializing the program!", name);
+				}
 			}
 
 			BX_TRACE("\tuniform %s %s%s is at location %d, size %d, offset %d"
